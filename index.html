@@ -621,38 +621,47 @@
 
             <div class="grid grid-2">
                 <div class="tile">
-                    <h3>Model Distribution</h3>
+                    <h3>Model Selection</h3>
                     
-                    <div class="slider-group">
-                        <div class="slider-header">
-                            <label class="form-label">GPT-4o (Premium)</label>
-                            <span class="slider-value" id="gpt4o-value">20%</span>
-                        </div>
-                        <input type="range" class="slider" id="gpt4o" min="0" max="100" value="20" oninput="updateModelMix()">
+                    <div style="margin-bottom: var(--spacing-05);">
+                        <button class="btn btn-secondary" onclick="openModelSelector()" style="width: 100%;">
+                            + Add/Remove Models
+                        </button>
                     </div>
-
-                    <div class="slider-group">
-                        <div class="slider-header">
-                            <label class="form-label">GPT-4o-mini</label>
-                            <span class="slider-value" id="gpt4mini-value">40%</span>
+                    
+                    <div id="selected-models-list">
+                        <!-- Default models -->
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <label class="form-label">GPT-4o</label>
+                                <span class="slider-value" id="gpt4o-value">20%</span>
+                            </div>
+                            <input type="range" class="slider" id="gpt4o" min="0" max="100" value="20" oninput="updateModelMix()">
                         </div>
-                        <input type="range" class="slider" id="gpt4mini" min="0" max="100" value="40" oninput="updateModelMix()">
-                    </div>
 
-                    <div class="slider-group">
-                        <div class="slider-header">
-                            <label class="form-label">Claude 3.5 Sonnet</label>
-                            <span class="slider-value" id="claude-sonnet-value">30%</span>
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <label class="form-label">GPT-4o mini</label>
+                                <span class="slider-value" id="gpt4mini-value">40%</span>
+                            </div>
+                            <input type="range" class="slider" id="gpt4mini" min="0" max="100" value="40" oninput="updateModelMix()">
                         </div>
-                        <input type="range" class="slider" id="claude-sonnet" min="0" max="100" value="30" oninput="updateModelMix()">
-                    </div>
 
-                    <div class="slider-group">
-                        <div class="slider-header">
-                            <label class="form-label">Claude 3.5 Haiku</label>
-                            <span class="slider-value" id="claude-haiku-value">10%</span>
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <label class="form-label">Claude 3.5 Sonnet</label>
+                                <span class="slider-value" id="claude-sonnet-value">30%</span>
+                            </div>
+                            <input type="range" class="slider" id="claude-sonnet" min="0" max="100" value="30" oninput="updateModelMix()">
                         </div>
-                        <input type="range" class="slider" id="claude-haiku" min="0" max="100" value="10" oninput="updateModelMix()">
+
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <label class="form-label">Claude 3 Haiku</label>
+                                <span class="slider-value" id="claude-haiku-value">10%</span>
+                            </div>
+                            <input type="range" class="slider" id="claude-haiku" min="0" max="100" value="10" oninput="updateModelMix()">
+                        </div>
                     </div>
 
                     <div id="mix-warning" class="notification notification-warning" style="display: none;">
@@ -1084,6 +1093,32 @@
         </svg>
     </button>
 
+    <!-- Model Selector Modal -->
+    <div class="modal-overlay" id="modelSelectorModal">
+        <div class="modal" style="max-width: 900px; width: 90%; max-height: 80vh;">
+            <div class="modal-header">
+                <h2>Select AI Models</h2>
+                <button class="modal-close" onclick="closeModelSelector()">✕</button>
+            </div>
+            <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+                <input type="text" class="form-input" id="modelSearch" placeholder="Search models..." onkeyup="filterModels()" style="margin-bottom: var(--spacing-05);">
+                
+                <div style="display: flex; gap: var(--spacing-03); margin-bottom: var(--spacing-05); flex-wrap: wrap;">
+                    <button class="btn btn-secondary" onclick="filterByProvider('all')">All</button>
+                    <button class="btn btn-secondary" onclick="filterByProvider('openai')">OpenAI</button>
+                    <button class="btn btn-secondary" onclick="filterByProvider('anthropic')">Anthropic</button>
+                    <button class="btn btn-secondary" onclick="filterByProvider('google')">Google</button>
+                </div>
+                
+                <div id="model-list" style="display: grid; gap: var(--spacing-03);"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModelSelector()">Cancel</button>
+                <button class="btn" onclick="applyModelSelection()">Apply Selection</button>
+            </div>
+        </div>
+    </div>
+    
     <!-- Feedback Modal -->
     <div class="modal-overlay" id="feedbackModal">
         <div class="modal">
@@ -1129,12 +1164,43 @@
     </div>
 
     <script>
-        // Model pricing data
-        const modelPricing = {
-            'gpt4o': { input: 2.50, output: 10.00 },
-            'gpt4mini': { input: 0.15, output: 0.60 },
-            'claude-sonnet': { input: 3.00, output: 15.00 },
-            'claude-haiku': { input: 0.25, output: 1.25 }
+        // Comprehensive model database
+        const modelDatabase = {
+            // OpenAI Models
+            'gpt-4-turbo': { provider: 'openai', name: 'GPT-4 Turbo', input: 10.00, output: 30.00, context: 128000 },
+            'gpt-4': { provider: 'openai', name: 'GPT-4', input: 30.00, output: 60.00, context: 8192 },
+            'gpt-4-32k': { provider: 'openai', name: 'GPT-4 32K', input: 60.00, output: 120.00, context: 32768 },
+            'gpt-4o': { provider: 'openai', name: 'GPT-4o', input: 5.00, output: 15.00, context: 128000 },
+            'gpt-4o-mini': { provider: 'openai', name: 'GPT-4o mini', input: 0.15, output: 0.60, context: 128000 },
+            'gpt-3.5-turbo': { provider: 'openai', name: 'GPT-3.5 Turbo', input: 0.50, output: 1.50, context: 16385 },
+            
+            // Anthropic Models  
+            'claude-3-opus': { provider: 'anthropic', name: 'Claude 3 Opus', input: 15.00, output: 75.00, context: 200000 },
+            'claude-3.5-sonnet': { provider: 'anthropic', name: 'Claude 3.5 Sonnet', input: 3.00, output: 15.00, context: 200000 },
+            'claude-3-haiku': { provider: 'anthropic', name: 'Claude 3 Haiku', input: 0.25, output: 1.25, context: 200000 },
+            'claude-2.1': { provider: 'anthropic', name: 'Claude 2.1', input: 8.00, output: 24.00, context: 200000 },
+            
+            // Google Models
+            'gemini-1.5-pro': { provider: 'google', name: 'Gemini 1.5 Pro', input: 3.50, output: 10.50, context: 1000000 },
+            'gemini-1.5-flash': { provider: 'google', name: 'Gemini 1.5 Flash', input: 0.35, output: 1.05, context: 1000000 },
+            'gemini-pro': { provider: 'google', name: 'Gemini Pro', input: 0.50, output: 1.50, context: 32760 },
+            
+            // Keep backward compatibility
+            'gpt4o': { provider: 'openai', name: 'GPT-4o', input: 5.00, output: 15.00, context: 128000 },
+            'gpt4mini': { provider: 'openai', name: 'GPT-4o mini', input: 0.15, output: 0.60, context: 128000 },
+            'claude-sonnet': { provider: 'anthropic', name: 'Claude 3.5 Sonnet', input: 3.00, output: 15.00, context: 200000 },
+            'claude-haiku': { provider: 'anthropic', name: 'Claude 3 Haiku', input: 0.25, output: 1.25, context: 200000 }
+        };
+
+        // Legacy reference for compatibility
+        const modelPricing = modelDatabase;
+        
+        // Track selected models
+        let selectedModels = {
+            'gpt4o': 20,
+            'gpt4mini': 40,
+            'claude-sonnet': 30,
+            'claude-haiku': 10
         };
 
         let marginChart = null;
@@ -1166,15 +1232,124 @@
             }
         }
 
+        // Model selector functions
+        function openModelSelector() {
+            const modal = document.getElementById('modelSelectorModal');
+            modal.classList.add('active');
+            renderModelList();
+        }
+        
+        function closeModelSelector() {
+            const modal = document.getElementById('modelSelectorModal');
+            modal.classList.remove('active');
+        }
+        
+        function renderModelList() {
+            const list = document.getElementById('model-list');
+            list.innerHTML = '';
+            
+            Object.entries(modelDatabase).forEach(([id, model]) => {
+                if (id === 'gpt4o' || id === 'gpt4mini' || id === 'claude-sonnet' || id === 'claude-haiku') {
+                    return; // Skip legacy IDs
+                }
+                
+                const isSelected = selectedModels[id] !== undefined;
+                const div = document.createElement('div');
+                div.style.cssText = 'padding: var(--spacing-05); background: white; border: 1px solid var(--carbon-gray-20); display: flex; align-items: center; gap: var(--spacing-05); cursor: pointer;';
+                if (isSelected) div.style.background = '#e0e9ff';
+                
+                div.innerHTML = `
+                    <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleModel('${id}')">
+                    <div style="flex: 1;">
+                        <strong>${model.name}</strong>
+                        <span style="font-size: 0.75rem; color: var(--carbon-gray-60); margin-left: 8px;">${model.provider}</span>
+                        <div style="font-size: 0.75rem; color: var(--carbon-gray-70);">
+                            Input: $${model.input}/M | Output: $${model.output}/M | Context: ${(model.context/1000).toFixed(0)}K
+                        </div>
+                    </div>
+                `;
+                
+                list.appendChild(div);
+            });
+        }
+        
+        function filterModels() {
+            const search = document.getElementById('modelSearch').value.toLowerCase();
+            const items = document.getElementById('model-list').children;
+            
+            Array.from(items).forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(search) ? 'flex' : 'none';
+            });
+        }
+        
+        function filterByProvider(provider) {
+            const items = document.getElementById('model-list').children;
+            
+            Array.from(items).forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (provider === 'all') {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = text.includes(provider) ? 'flex' : 'none';
+                }
+            });
+        }
+        
+        function toggleModel(modelId) {
+            if (selectedModels[modelId] !== undefined) {
+                delete selectedModels[modelId];
+            } else {
+                // Auto-allocate percentage
+                const remaining = 100 - Object.values(selectedModels).reduce((sum, val) => sum + val, 0);
+                selectedModels[modelId] = Math.min(remaining, 10);
+            }
+            renderModelList();
+        }
+        
+        function applyModelSelection() {
+            updateSelectedModelsList();
+            closeModelSelector();
+            updateModelMix();
+        }
+        
+        function updateSelectedModelsList() {
+            const container = document.getElementById('selected-models-list');
+            container.innerHTML = '';
+            
+            Object.entries(selectedModels).forEach(([id, percentage]) => {
+                const model = modelDatabase[id];
+                if (!model) return;
+                
+                const div = document.createElement('div');
+                div.className = 'slider-group';
+                div.innerHTML = `
+                    <div class="slider-header">
+                        <label class="form-label">${model.name}</label>
+                        <span class="slider-value" id="${id}-value">${percentage}%</span>
+                    </div>
+                    <input type="range" class="slider" id="${id}" min="0" max="100" value="${percentage}" oninput="updateModelMix()">
+                `;
+                container.appendChild(div);
+            });
+        }
+        
         // Model mix calculations
         function updateModelMix() {
-            const models = ['gpt4o', 'gpt4mini', 'claude-sonnet', 'claude-haiku'];
             let total = 0;
             
-            models.forEach(model => {
-                const value = parseInt(document.getElementById(model).value);
-                document.getElementById(model + '-value').textContent = value + '%';
-                total += value;
+            // Update all selected models
+            Object.keys(selectedModels).forEach(modelId => {
+                const slider = document.getElementById(modelId);
+                if (slider) {
+                    const value = parseInt(slider.value);
+                    selectedModels[modelId] = value;
+                    const valueDisplay = document.getElementById(modelId + '-value');
+                    if (valueDisplay) {
+                        valueDisplay.textContent = value + '%';
+                    }
+                    total += value;
+                }
             });
             
             const warning = document.getElementById('mix-warning');
@@ -1190,20 +1365,17 @@
         }
 
         function calculateBlendedCosts() {
-            const models = {
-                'gpt4o': parseInt(document.getElementById('gpt4o').value) / 100,
-                'gpt4mini': parseInt(document.getElementById('gpt4mini').value) / 100,
-                'claude-sonnet': parseInt(document.getElementById('claude-sonnet').value) / 100,
-                'claude-haiku': parseInt(document.getElementById('claude-haiku').value) / 100
-            };
-            
             let blendedInput = 0;
             let blendedOutput = 0;
             
-            for (const [model, weight] of Object.entries(models)) {
-                blendedInput += modelPricing[model].input * weight;
-                blendedOutput += modelPricing[model].output * weight;
-            }
+            Object.entries(selectedModels).forEach(([modelId, percentage]) => {
+                const model = modelDatabase[modelId];
+                if (model) {
+                    const weight = percentage / 100;
+                    blendedInput += model.input * weight;
+                    blendedOutput += model.output * weight;
+                }
+            });
             
             document.getElementById('blended-input').textContent = '$' + blendedInput.toFixed(2);
             document.getElementById('blended-output').textContent = '$' + blendedOutput.toFixed(2);

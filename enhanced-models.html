@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Model Selection - AI Margin Calculator</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --carbon-gray-10: #f4f4f4;
+            --carbon-gray-20: #e0e0e0;
+            --carbon-gray-30: #c6c6c6;
+            --carbon-gray-50: #8d8d8d;
+            --carbon-gray-70: #525252;
+            --carbon-gray-90: #262626;
+            --carbon-gray-100: #161616;
+            --carbon-blue-60: #0f62fe;
+            --carbon-green-60: #198038;
+            --carbon-red-60: #da1e28;
+            --spacing-03: 0.5rem;
+            --spacing-05: 1rem;
+            --spacing-06: 1.5rem;
+        }
+
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+            background: var(--carbon-gray-10);
+            padding: 20px;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: var(--spacing-06);
+        }
+
+        h2 {
+            font-size: 1.75rem;
+            font-weight: 300;
+            margin-bottom: var(--spacing-05);
+        }
+
+        .model-selector {
+            margin-bottom: var(--spacing-06);
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+            border: none;
+            border-bottom: 2px solid var(--carbon-gray-50);
+            background: var(--carbon-gray-10);
+            margin-bottom: var(--spacing-05);
+        }
+
+        .search-bar:focus {
+            outline: none;
+            border-bottom-color: var(--carbon-blue-60);
+            background: white;
+        }
+
+        .provider-tabs {
+            display: flex;
+            gap: 1px;
+            margin-bottom: var(--spacing-05);
+            background: var(--carbon-gray-20);
+            padding: 2px;
+        }
+
+        .provider-tab {
+            flex: 1;
+            padding: 12px;
+            background: white;
+            border: none;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .provider-tab:hover {
+            background: var(--carbon-gray-10);
+        }
+
+        .provider-tab.active {
+            background: var(--carbon-blue-60);
+            color: white;
+        }
+
+        .models-grid {
+            display: grid;
+            gap: var(--spacing-03);
+            max-height: 400px;
+            overflow-y: auto;
+            padding: var(--spacing-03);
+            background: var(--carbon-gray-10);
+        }
+
+        .model-item {
+            background: white;
+            padding: var(--spacing-05);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-05);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .model-item:hover {
+            border-color: var(--carbon-blue-60);
+            transform: translateX(4px);
+        }
+
+        .model-item.selected {
+            background: #e0e9ff;
+            border-color: var(--carbon-blue-60);
+        }
+
+        .model-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .model-info {
+            flex: 1;
+        }
+
+        .model-name {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--carbon-gray-100);
+        }
+
+        .model-details {
+            font-size: 0.75rem;
+            color: var(--carbon-gray-70);
+            margin-top: 4px;
+        }
+
+        .model-pricing {
+            text-align: right;
+        }
+
+        .price-input {
+            width: 60px;
+            padding: 4px;
+            border: 1px solid var(--carbon-gray-30);
+            border-radius: 2px;
+            text-align: right;
+            font-size: 0.875rem;
+        }
+
+        .selected-models {
+            margin-top: var(--spacing-06);
+            padding: var(--spacing-05);
+            background: var(--carbon-gray-10);
+        }
+
+        .selected-model-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--spacing-03);
+            background: white;
+            margin-bottom: var(--spacing-03);
+        }
+
+        .allocation-slider {
+            width: 200px;
+        }
+
+        .remove-btn {
+            background: var(--carbon-red-60);
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+
+        .provider-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .badge-openai { background: #74aa9c; color: white; }
+        .badge-anthropic { background: #d97757; color: white; }
+        .badge-google { background: #4285f4; color: white; }
+        .badge-meta { background: #1877f2; color: white; }
+        .badge-mistral { background: #ff6b6b; color: white; }
+        .badge-cohere { background: #5a67d8; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Select AI Models for Your Mix</h2>
+        
+        <div class="model-selector">
+            <input type="text" class="search-bar" id="modelSearch" placeholder="Search models (e.g., 'GPT-4', 'Claude', 'cheap', 'vision')">
+            
+            <div class="provider-tabs">
+                <button class="provider-tab active" onclick="filterProvider('all')">All Providers</button>
+                <button class="provider-tab" onclick="filterProvider('openai')">OpenAI</button>
+                <button class="provider-tab" onclick="filterProvider('anthropic')">Anthropic</button>
+                <button class="provider-tab" onclick="filterProvider('google')">Google</button>
+                <button class="provider-tab" onclick="filterProvider('meta')">Meta</button>
+                <button class="provider-tab" onclick="filterProvider('other')">Others</button>
+            </div>
+            
+            <div class="models-grid" id="modelsGrid">
+                <!-- Models will be populated here -->
+            </div>
+        </div>
+        
+        <div class="selected-models">
+            <h3>Selected Models & Allocation</h3>
+            <div id="selectedModelsList">
+                <!-- Selected models will appear here -->
+            </div>
+            <div style="margin-top: 20px; padding: 20px; background: white;">
+                <strong>Total Allocation: <span id="totalAllocation">0</span>%</strong>
+                <span id="allocationWarning" style="color: var(--carbon-red-60); margin-left: 20px;"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Comprehensive model database with latest pricing (as of 2024)
+        const modelDatabase = {
+            // OpenAI Models
+            'gpt-4-turbo': {
+                provider: 'openai',
+                name: 'GPT-4 Turbo',
+                description: '128K context, latest GPT-4',
+                inputPrice: 10.00,
+                outputPrice: 30.00,
+                contextWindow: 128000,
+                tags: ['premium', 'large', 'multimodal']
+            },
+            'gpt-4': {
+                provider: 'openai',
+                name: 'GPT-4',
+                description: '8K context, original GPT-4',
+                inputPrice: 30.00,
+                outputPrice: 60.00,
+                contextWindow: 8192,
+                tags: ['premium', 'large']
+            },
+            'gpt-4-32k': {
+                provider: 'openai',
+                name: 'GPT-4 32K',
+                description: '32K context window',
+                inputPrice: 60.00,
+                outputPrice: 120.00,
+                contextWindow: 32768,
+                tags: ['premium', 'large', 'extended']
+            },
+            'gpt-4o': {
+                provider: 'openai',
+                name: 'GPT-4o',
+                description: 'Optimized GPT-4, faster',
+                inputPrice: 5.00,
+                outputPrice: 15.00,
+                contextWindow: 128000,
+                tags: ['efficient', 'multimodal']
+            },
+            'gpt-4o-mini': {
+                provider: 'openai',
+                name: 'GPT-4o mini',
+                description: 'Small, affordable GPT-4 quality',
+                inputPrice: 0.15,
+                outputPrice: 0.60,
+                contextWindow: 128000,
+                tags: ['cheap', 'efficient', 'small']
+            },
+            'gpt-3.5-turbo': {
+                provider: 'openai',
+                name: 'GPT-3.5 Turbo',
+                description: 'Fast and affordable',
+                inputPrice: 0.50,
+                outputPrice: 1.50,
+                contextWindow: 16385,
+                tags: ['cheap', 'fast']
+            },
+            'gpt-3.5-turbo-16k': {
+                provider: 'openai',
+                name: 'GPT-3.5 Turbo 16K',
+                description: 'Extended context GPT-3.5',
+                inputPrice: 3.00,
+                outputPrice: 4.00,
+                contextWindow: 16385,
+                tags: ['cheap', 'extended']
+            },
+            
+            // Anthropic Models
+            'claude-3-opus': {
+                provider: 'anthropic',
+                name: 'Claude 3 Opus',
+                description: 'Most capable Claude model',
+                inputPrice: 15.00,
+                outputPrice: 75.00,
+                contextWindow: 200000,
+                tags: ['premium', 'large', 'reasoning']
+            },
+            'claude-3-sonnet': {
+                provider: 'anthropic',
+                name: 'Claude 3 Sonnet',
+                description: 'Balanced performance',
+                inputPrice: 3.00,
+                outputPrice: 15.00,
+                contextWindow: 200000,
+                tags: ['balanced', 'efficient']
+            },
+            'claude-3-haiku': {
+                provider: 'anthropic',
+                name: 'Claude 3 Haiku',
+                description: 'Fast and affordable',
+                inputPrice: 0.25,
+                outputPrice: 1.25,
+                contextWindow: 200000,
+                tags: ['cheap', 'fast', 'small']
+            },
+            'claude-3.5-sonnet': {
+                provider: 'anthropic',
+                name: 'Claude 3.5 Sonnet',
+                description: 'Latest Sonnet, improved',
+                inputPrice: 3.00,
+                outputPrice: 15.00,
+                contextWindow: 200000,
+                tags: ['latest', 'balanced', 'efficient']
+            },
+            'claude-2.1': {
+                provider: 'anthropic',
+                name: 'Claude 2.1',
+                description: 'Previous generation',
+                inputPrice: 8.00,
+                outputPrice: 24.00,
+                contextWindow: 200000,
+                tags: ['legacy', 'large']
+            },
+            'claude-instant': {
+                provider: 'anthropic',
+                name: 'Claude Instant',
+                description: 'Fastest Claude model',
+                inputPrice: 0.80,
+                outputPrice: 2.40,
+                contextWindow: 100000,
+                tags: ['fast', 'cheap']
+            },
+            
+            // Google Models
+            'gemini-1.5-pro': {
+                provider: 'google',
+                name: 'Gemini 1.5 Pro',
+                description: '1M context window',
+                inputPrice: 3.50,
+                outputPrice: 10.50,
+                contextWindow: 1000000,
+                tags: ['large', 'extended', 'multimodal']
+            },
+            'gemini-1.5-flash': {
+                provider: 'google',
+                name: 'Gemini 1.5 Flash',
+                description: 'Fast and efficient',
+                inputPrice: 0.35,
+                outputPrice: 1.05,
+                contextWindow: 1000000,
+                tags: ['fast', 'cheap', 'efficient']
+            },
+            'gemini-pro': {
+                provider: 'google',
+                name: 'Gemini Pro',
+                description: 'Balanced Gemini model',
+                inputPrice: 0.50,
+                outputPrice: 1.50,
+                contextWindow: 32760,
+                tags: ['balanced']
+            },
+            'gemini-pro-vision': {
+                provider: 'google',
+                name: 'Gemini Pro Vision',
+                description: 'Multimodal capabilities',
+                inputPrice: 0.50,
+                outputPrice: 1.50,
+                contextWindow: 32760,
+                tags: ['vision', 'multimodal']
+            },
+            'palm-2': {
+                provider: 'google',
+                name: 'PaLM 2',
+                description: 'Previous gen Google model',
+                inputPrice: 1.00,
+                outputPrice: 3.00,
+                contextWindow: 8192,
+                tags: ['legacy']
+            },
+            
+            // Meta Models (Llama)
+            'llama-3-70b': {
+                provider: 'meta',
+                name: 'Llama 3 70B',
+                description: 'Open source, self-host',
+                inputPrice: 0.00,
+                outputPrice: 0.00,
+                contextWindow: 8192,
+                tags: ['open-source', 'large', 'self-host']
+            },
+            'llama-3-8b': {
+                provider: 'meta',
+                name: 'Llama 3 8B',
+                description: 'Smaller Llama 3',
+                inputPrice: 0.00,
+                outputPrice: 0.00,
+                contextWindow: 8192,
+                tags: ['open-source', 'small', 'self-host']
+            },
+            'llama-2-70b': {
+                provider: 'meta',
+                name: 'Llama 2 70B',
+                description: 'Previous Llama version',
+                inputPrice: 0.00,
+                outputPrice: 0.00,
+                contextWindow: 4096,
+                tags: ['open-source', 'legacy', 'self-host']
+            },
+            'codellama-70b': {
+                provider: 'meta',
+                name: 'Code Llama 70B',
+                description: 'Specialized for code',
+                inputPrice: 0.00,
+                outputPrice: 0.00,
+                contextWindow: 16384,
+                tags: ['open-source', 'code', 'self-host']
+            },
+            
+            // Mistral Models
+            'mistral-large': {
+                provider: 'mistral',
+                name: 'Mistral Large',
+                description: 'Most capable Mistral',
+                inputPrice: 8.00,
+                outputPrice: 24.00,
+                contextWindow: 32000,
+                tags: ['large', 'reasoning']
+            },
+            'mistral-medium': {
+                provider: 'mistral',
+                name: 'Mistral Medium',
+                description: 'Balanced Mistral model',
+                inputPrice: 2.70,
+                outputPrice: 8.10,
+                contextWindow: 32000,
+                tags: ['balanced']
+            },
+            'mistral-small': {
+                provider: 'mistral',
+                name: 'Mistral Small',
+                description: 'Efficient and fast',
+                inputPrice: 0.20,
+                outputPrice: 0.60,
+                contextWindow: 32000,
+                tags: ['cheap', 'fast', 'small']
+            },
+            'mixtral-8x7b': {
+                provider: 'mistral',
+                name: 'Mixtral 8x7B',
+                description: 'MoE architecture',
+                inputPrice: 0.70,
+                outputPrice: 0.70,
+                contextWindow: 32000,
+                tags: ['efficient', 'moe']
+            },
+            
+            // Cohere Models
+            'command-r-plus': {
+                provider: 'cohere',
+                name: 'Command R+',
+                description: 'Largest Cohere model',
+                inputPrice: 3.00,
+                outputPrice: 15.00,
+                contextWindow: 128000,
+                tags: ['large', 'rag']
+            },
+            'command-r': {
+                provider: 'cohere',
+                name: 'Command R',
+                description: 'Optimized for RAG',
+                inputPrice: 0.50,
+                outputPrice: 1.50,
+                contextWindow: 128000,
+                tags: ['rag', 'efficient']
+            },
+            'command': {
+                provider: 'cohere',
+                name: 'Command',
+                description: 'General purpose',
+                inputPrice: 1.00,
+                outputPrice: 2.00,
+                contextWindow: 4096,
+                tags: ['balanced']
+            }
+        };
+
+        let selectedModels = {};
+        let currentFilter = 'all';
+        let searchTerm = '';
+
+        function initializeModels() {
+            renderModels();
+            setupEventListeners();
+        }
+
+        function setupEventListeners() {
+            document.getElementById('modelSearch').addEventListener('input', (e) => {
+                searchTerm = e.target.value.toLowerCase();
+                renderModels();
+            });
+        }
+
+        function filterProvider(provider) {
+            currentFilter = provider;
+            document.querySelectorAll('.provider-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            renderModels();
+        }
+
+        function renderModels() {
+            const grid = document.getElementById('modelsGrid');
+            grid.innerHTML = '';
+            
+            Object.entries(modelDatabase).forEach(([modelId, model]) => {
+                // Apply filters
+                if (currentFilter !== 'all') {
+                    if (currentFilter === 'other' && !['openai', 'anthropic', 'google', 'meta'].includes(model.provider)) {
+                        // Show other providers
+                    } else if (model.provider !== currentFilter) {
+                        return;
+                    }
+                }
+                
+                // Apply search
+                if (searchTerm) {
+                    const searchableText = `${model.name} ${model.description} ${model.tags.join(' ')} ${model.provider}`.toLowerCase();
+                    if (!searchableText.includes(searchTerm)) {
+                        return;
+                    }
+                }
+                
+                const modelElement = createModelElement(modelId, model);
+                grid.appendChild(modelElement);
+            });
+        }
+
+        function createModelElement(modelId, model) {
+            const div = document.createElement('div');
+            div.className = 'model-item';
+            if (selectedModels[modelId]) {
+                div.classList.add('selected');
+            }
+            
+            const providerColors = {
+                openai: 'badge-openai',
+                anthropic: 'badge-anthropic',
+                google: 'badge-google',
+                meta: 'badge-meta',
+                mistral: 'badge-mistral',
+                cohere: 'badge-cohere'
+            };
+            
+            div.innerHTML = `
+                <input type="checkbox" class="model-checkbox" 
+                    ${selectedModels[modelId] ? 'checked' : ''}
+                    onchange="toggleModel('${modelId}')">
+                <div class="model-info">
+                    <div class="model-name">
+                        ${model.name}
+                        <span class="provider-badge ${providerColors[model.provider]}">${model.provider.toUpperCase()}</span>
+                    </div>
+                    <div class="model-details">
+                        ${model.description} | Context: ${(model.contextWindow/1000).toFixed(0)}K
+                    </div>
+                </div>
+                <div class="model-pricing">
+                    <div style="font-size: 0.875rem;">
+                        <strong>Input:</strong> $${model.inputPrice.toFixed(2)}/M
+                    </div>
+                    <div style="font-size: 0.875rem;">
+                        <strong>Output:</strong> $${model.outputPrice.toFixed(2)}/M
+                    </div>
+                </div>
+            `;
+            
+            div.onclick = (e) => {
+                if (e.target.type !== 'checkbox') {
+                    const checkbox = div.querySelector('.model-checkbox');
+                    checkbox.checked = !checkbox.checked;
+                    toggleModel(modelId);
+                }
+            };
+            
+            return div;
+        }
+
+        function toggleModel(modelId) {
+            if (selectedModels[modelId]) {
+                delete selectedModels[modelId];
+            } else {
+                // Auto-allocate percentage
+                const currentTotal = Object.values(selectedModels).reduce((sum, m) => sum + m.allocation, 0);
+                const remaining = 100 - currentTotal;
+                const newAllocation = remaining > 0 ? Math.min(remaining, 20) : 10;
+                
+                selectedModels[modelId] = {
+                    ...modelDatabase[modelId],
+                    allocation: newAllocation
+                };
+            }
+            
+            renderModels();
+            updateSelectedModels();
+        }
+
+        function updateSelectedModels() {
+            const list = document.getElementById('selectedModelsList');
+            list.innerHTML = '';
+            
+            Object.entries(selectedModels).forEach(([modelId, model]) => {
+                const div = document.createElement('div');
+                div.className = 'selected-model-item';
+                div.innerHTML = `
+                    <div>
+                        <strong>${model.name}</strong>
+                        <span style="color: var(--carbon-gray-70); font-size: 0.875rem; margin-left: 10px;">
+                            $${model.inputPrice}/$${model.outputPrice} per M
+                        </span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 20px;">
+                        <div>
+                            <input type="range" class="allocation-slider" 
+                                min="0" max="100" value="${model.allocation}"
+                                onchange="updateAllocation('${modelId}', this.value)">
+                            <span style="margin-left: 10px; font-weight: bold;">${model.allocation}%</span>
+                        </div>
+                        <button class="remove-btn" onclick="removeModel('${modelId}')">Remove</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+            
+            updateTotalAllocation();
+            calculateBlendedCost();
+        }
+
+        function updateAllocation(modelId, value) {
+            selectedModels[modelId].allocation = parseInt(value);
+            updateSelectedModels();
+        }
+
+        function removeModel(modelId) {
+            delete selectedModels[modelId];
+            renderModels();
+            updateSelectedModels();
+        }
+
+        function updateTotalAllocation() {
+            const total = Object.values(selectedModels).reduce((sum, m) => sum + m.allocation, 0);
+            document.getElementById('totalAllocation').textContent = total;
+            
+            const warning = document.getElementById('allocationWarning');
+            if (total !== 100 && Object.keys(selectedModels).length > 0) {
+                warning.textContent = 'Warning: Allocation should equal 100%';
+            } else {
+                warning.textContent = '';
+            }
+        }
+
+        function calculateBlendedCost() {
+            if (Object.keys(selectedModels).length === 0) return;
+            
+            let blendedInput = 0;
+            let blendedOutput = 0;
+            
+            Object.values(selectedModels).forEach(model => {
+                const weight = model.allocation / 100;
+                blendedInput += model.inputPrice * weight;
+                blendedOutput += model.outputPrice * weight;
+            });
+            
+            console.log('Blended Input Cost: $' + blendedInput.toFixed(2) + '/M tokens');
+            console.log('Blended Output Cost: $' + blendedOutput.toFixed(2) + '/M tokens');
+            
+            // This data can be passed back to the main calculator
+            return { input: blendedInput, output: blendedOutput };
+        }
+
+        // Initialize on load
+        window.onload = initializeModels;
+    </script>
+</body>
+</html>
