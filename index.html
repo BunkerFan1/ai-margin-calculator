@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Product Margin Calculator - Understand Your AI Unit Economics</title>
+    <title>AI Margin Calculator - Free Tool to Calculate AI Product Unit Economics</title>
     
     <!-- SEO Meta Tags -->
-    <meta name="description" content="Free AI margin calculator to analyze unit economics, model costs, and pricing strategies. Identify when seat-based pricing becomes unprofitable due to agent loops.">
-    <meta name="keywords" content="AI pricing, margin calculator, unit economics, GPT-4 costs, Claude pricing, SaaS metrics, AI product management">
+    <meta name="description" content="Free AI margin calculator reveals when your seat-based pricing becomes unprofitable. Calculate unit economics for GPT-4, Claude, and Gemini models. No signup required.">
+    <meta name="keywords" content="AI pricing calculator, GPT-4 cost calculator, Claude pricing, Gemini costs, unit economics, SaaS margins, AI product pricing, agent loop detection, LLM costs">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://ai-margin-calculator.vercel.app">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
@@ -20,6 +22,20 @@
     
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Plausible Analytics - Privacy-friendly, no cookies -->
+    <script defer data-domain="ai-margin-calculator.vercel.app" src="https://plausible.io/js/script.js"></script>
+    
+    <!-- OR Google Analytics (replace G-XXXXXXXXXX with your ID) -->
+    <!--
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
+    -->
     
     <style>
         /* IBM Carbon Design System Variables */
@@ -1001,6 +1017,41 @@
             </div>
         </div>
 
+        <!-- Storage Options -->
+        <div class="tile" style="margin-top: var(--spacing-06);">
+            <h3>Data Management</h3>
+            
+            <div class="grid grid-2" style="gap: var(--spacing-05);">
+                <!-- Auto-Save -->
+                <div>
+                    <h4 style="font-size: 0.875rem; margin-bottom: var(--spacing-03); color: var(--carbon-gray-70);">Auto-Save</h4>
+                    <p class="helper-text" id="auto-save-status">Auto-saving enabled</p>
+                </div>
+                
+                <!-- Export/Import -->
+                <div>
+                    <h4 style="font-size: 0.875rem; margin-bottom: var(--spacing-03); color: var(--carbon-gray-70);">Configuration</h4>
+                    <button class="btn btn-secondary" onclick="exportConfiguration()" style="margin-bottom: var(--spacing-02);">Export JSON</button>
+                    <label class="btn btn-secondary" style="margin: 0; cursor: pointer;">
+                        Import JSON
+                        <input type="file" accept=".json" onchange="importConfiguration(this.files[0])" style="display: none;">
+                    </label>
+                </div>
+                
+                <!-- Spreadsheet -->
+                <div>
+                    <h4 style="font-size: 0.875rem; margin-bottom: var(--spacing-03); color: var(--carbon-gray-70);">Spreadsheet</h4>
+                    <button class="btn btn-secondary" onclick="exportToCSV()">Export to CSV</button>
+                </div>
+                
+                <!-- Share -->
+                <div>
+                    <h4 style="font-size: 0.875rem; margin-bottom: var(--spacing-03); color: var(--carbon-gray-70);">Share</h4>
+                    <button class="btn btn-secondary" onclick="generateShareableURL()">Copy Share Link</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Action Buttons -->
         <div style="margin-top: var(--spacing-07); padding-top: var(--spacing-06); border-top: 1px solid var(--carbon-gray-20);">
             <button class="btn" onclick="saveScenario()">Save Scenario</button>
@@ -1009,6 +1060,22 @@
             <button class="btn btn-danger" onclick="resetCalculator()">Reset</button>
         </div>
     </main>
+    
+    <!-- Auto-save indicator -->
+    <div id="save-indicator" style="
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: var(--carbon-green-60);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 4px;
+        display: none;
+        z-index: 100;
+        font-size: 0.75rem;
+    ">
+        ✓ Auto-saved
+    </div>
 
     <!-- Feedback Button -->
     <button class="feedback-button" onclick="openFeedback()" aria-label="Send Feedback">
@@ -1434,12 +1501,190 @@ Download full report at: https://ai-margin-calculator.com
             // Placeholder for pricing model updates
         }
 
+        // Storage Functions
+        function exportConfiguration() {
+            const config = {
+                version: "1.1",
+                timestamp: new Date().toISOString(),
+                models: {
+                    gpt4o: document.getElementById('gpt4o').value,
+                    gpt4mini: document.getElementById('gpt4mini').value,
+                    claudeSonnet: document.getElementById('claude-sonnet').value,
+                    claudeHaiku: document.getElementById('claude-haiku').value
+                },
+                usage: getAllInputValues('usage'),
+                pricing: getAllInputValues('pricing'),
+                loops: getAllInputValues('loops'),
+                results: {
+                    avgCost: document.getElementById('avg-cost').textContent,
+                    grossMargin: document.getElementById('gross-margin').textContent,
+                    breakeven: document.getElementById('breakeven').textContent
+                }
+            };
+            
+            const dataStr = JSON.stringify(config, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            const exportName = `ai-margin-config-${new Date().toISOString().slice(0,10)}.json`;
+            
+            const link = document.createElement('a');
+            link.href = dataUri;
+            link.download = exportName;
+            link.click();
+        }
+        
+        function importConfiguration(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const config = JSON.parse(e.target.result);
+                    
+                    // Load all values
+                    Object.entries(config.models || {}).forEach(([key, value]) => {
+                        const element = document.getElementById(key.replace(/([A-Z])/g, '-$1').toLowerCase());
+                        if (element) element.value = value;
+                    });
+                    
+                    updateModelMix();
+                    updateCacheValue();
+                    calculateMargins();
+                    simulateLoops();
+                    
+                    showSaveIndicator();
+                    alert('Configuration imported successfully!');
+                } catch (error) {
+                    alert('Error importing configuration: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        function exportToCSV() {
+            const rows = [
+                ['AI Margin Calculator Export', new Date().toISOString()],
+                [],
+                ['Model Mix'],
+                ['Model', 'Percentage'],
+                ['GPT-4o', document.getElementById('gpt4o').value + '%'],
+                ['GPT-4o-mini', document.getElementById('gpt4mini').value + '%'],
+                ['Claude 3.5 Sonnet', document.getElementById('claude-sonnet').value + '%'],
+                ['Claude 3.5 Haiku', document.getElementById('claude-haiku').value + '%'],
+                [],
+                ['Results'],
+                ['Average Cost', document.getElementById('avg-cost').textContent],
+                ['Gross Margin', document.getElementById('gross-margin').textContent],
+                ['Power User Margin', document.getElementById('power-margin').textContent],
+                ['Break-even', document.getElementById('breakeven').textContent]
+            ];
+            
+            const csv = rows.map(row => row.map(cell => 
+                typeof cell === 'string' && cell.includes(',') ? `"${cell}"` : cell
+            ).join(',')).join('\n');
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `margin-analysis-${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+        }
+        
+        function generateShareableURL() {
+            const params = new URLSearchParams();
+            params.set('g4o', document.getElementById('gpt4o').value);
+            params.set('g4m', document.getElementById('gpt4mini').value);
+            params.set('cs', document.getElementById('claude-sonnet').value);
+            params.set('ch', document.getElementById('claude-haiku').value);
+            params.set('tpu', document.getElementById('tokens-per-user').value);
+            params.set('pp', document.getElementById('pro-price').value);
+            
+            const shareURL = window.location.origin + window.location.pathname + '?' + params.toString();
+            
+            navigator.clipboard.writeText(shareURL).then(() => {
+                alert('Share link copied to clipboard!');
+            }).catch(() => {
+                prompt('Copy this link:', shareURL);
+            });
+        }
+        
+        function getAllInputValues(section) {
+            const values = {};
+            const inputs = document.querySelectorAll(`#${section}-panel input, #${section}-panel select`);
+            inputs.forEach(input => {
+                values[input.id] = input.value;
+            });
+            return values;
+        }
+        
+        function showSaveIndicator() {
+            const indicator = document.getElementById('save-indicator');
+            if (indicator) {
+                indicator.style.display = 'block';
+                setTimeout(() => {
+                    indicator.style.display = 'none';
+                }, 2000);
+            }
+        }
+        
+        // Auto-save functionality
+        function enableAutoSave() {
+            const inputs = document.querySelectorAll('input, select');
+            const saveState = () => {
+                const state = {};
+                inputs.forEach(input => {
+                    if (input.id) state[input.id] = input.value;
+                });
+                localStorage.setItem('ai-calc-autosave', JSON.stringify(state));
+                showSaveIndicator();
+            };
+            
+            inputs.forEach(input => {
+                input.addEventListener('change', saveState);
+                input.addEventListener('input', debounce(saveState, 1000));
+            });
+            
+            // Load saved state
+            const saved = localStorage.getItem('ai-calc-autosave');
+            if (saved) {
+                const state = JSON.parse(saved);
+                Object.entries(state).forEach(([id, value]) => {
+                    const element = document.getElementById(id);
+                    if (element) element.value = value;
+                });
+                updateModelMix();
+                updateCacheValue();
+                calculateMargins();
+                simulateLoops();
+            }
+        }
+        
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+        
         // Initialize on load
         window.onload = function() {
             updateModelMix();
             updateCacheValue();
             calculateMargins();
             simulateLoops();
+            enableAutoSave();
+            
+            // Load from URL params if present
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('g4o')) {
+                document.getElementById('gpt4o').value = params.get('g4o');
+                document.getElementById('gpt4mini').value = params.get('g4m');
+                document.getElementById('claude-sonnet').value = params.get('cs');
+                document.getElementById('claude-haiku').value = params.get('ch');
+                if (params.has('tpu')) document.getElementById('tokens-per-user').value = params.get('tpu');
+                if (params.has('pp')) document.getElementById('pro-price').value = params.get('pp');
+                updateModelMix();
+                calculateMargins();
+            }
         };
 
         // Close modal on outside click

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Margin Calculator - Know Your True Unit Economics | Free Tool</title>
+    
+    <!-- Essential SEO -->
+    <meta name="description" content="Free AI margin calculator reveals when your seat-based pricing becomes unprofitable. Calculate unit economics for GPT-4, Claude, and Gemini models. No signup required.">
+    <meta name="keywords" content="AI pricing calculator, GPT-4 cost calculator, Claude pricing, unit economics, SaaS margins, AI product pricing, agent loop detection">
+    <meta name="author" content="AI Margin Calculator">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="AI Margin Calculator - When Do Your AI Products Lose Money?">
+    <meta property="og:description" content="Free tool to calculate AI product margins. Discover which customers are unprofitable and when agent loops eat your profits.">
+    <meta property="og:image" content="https://ai-margin-calculator.vercel.app/og-image.png">
+    <meta property="og:url" content="https://ai-margin-calculator.vercel.app">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="AI Margin Calculator">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="AI Margin Calculator - Free Tool">
+    <meta name="twitter:description" content="Calculate your true AI product margins. Know when power users become unprofitable.">
+    <meta name="twitter:image" content="https://ai-margin-calculator.vercel.app/twitter-card.png">
+    <meta name="twitter:creator" content="@yourusername">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://ai-margin-calculator.vercel.app">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==">
+    
+    <!-- Google Analytics (Replace GA_MEASUREMENT_ID) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'GA_MEASUREMENT_ID');
+    </script>
+    
+    <!-- Plausible Analytics (Alternative - Privacy Friendly) -->
+    <!-- <script defer data-domain="yourdomain.com" src="https://plausible.io/js/script.js"></script> -->
+    
+    <!-- Schema.org Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "AI Margin Calculator",
+      "description": "Calculate AI product margins and unit economics for GPT-4, Claude, and Gemini models",
+      "url": "https://ai-margin-calculator.vercel.app",
+      "applicationCategory": "BusinessApplication",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "creator": {
+        "@type": "Organization",
+        "name": "AI Margin Calculator"
+      }
+    }
+    </script>
+    
+    <style>
+        /* Add your existing styles here */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Product Hunt Badge */
+        .ph-badge {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        @media (max-width: 768px) {
+            .ph-badge {
+                position: static;
+                margin: 20px auto;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Product Hunt Badge (Update with your post ID) -->
+    <div class="ph-badge">
+        <a href="https://www.producthunt.com/posts/ai-margin-calculator?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-ai-margin-calculator" target="_blank">
+            <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=YOUR_POST_ID&theme=light" 
+                 alt="AI Margin Calculator - Know your true AI unit economics | Product Hunt" 
+                 style="width: 250px; height: 54px;" width="250" height="54" />
+        </a>
+    </div>
+
+    <!-- Your calculator content here -->
+    
+    <!-- Event Tracking -->
+    <script>
+        // Track important events
+        function trackEvent(action, category, label, value) {
+            if (typeof gtag !== 'undefined') {
+                gtag('event', action, {
+                    'event_category': category,
+                    'event_label': label,
+                    'value': value
+                });
+            }
+            
+            // For Plausible
+            if (typeof plausible !== 'undefined') {
+                plausible(action, {props: {category: category, label: label}});
+            }
+        }
+        
+        // Track calculator usage
+        document.addEventListener('DOMContentLoaded', function() {
+            // Track page load
+            trackEvent('page_view', 'engagement', 'calculator_loaded');
+            
+            // Track calculations
+            if (typeof calculateMargins !== 'undefined') {
+                const originalCalculate = calculateMargins;
+                calculateMargins = function() {
+                    trackEvent('calculate', 'calculator', 'margin_calculation');
+                    return originalCalculate.apply(this, arguments);
+                };
+            }
+            
+            // Track exports
+            if (typeof exportResults !== 'undefined') {
+                const originalExport = exportResults;
+                exportResults = function() {
+                    trackEvent('export', 'calculator', 'results_exported');
+                    return originalExport.apply(this, arguments);
+                };
+            }
+        });
+    </script>
+    
+    <!-- Hotjar Tracking (Optional - for heatmaps) -->
+    <!-- <script>
+        (function(h,o,t,j,a,r){
+            h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
+            h._hjSettings={hjid:YOUR_SITE_ID,hjsv:6};
+            a=o.getElementsByTagName('head')[0];
+            r=o.createElement('script');r.async=1;
+            r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
+            a.appendChild(r);
+        })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
+    </script> -->
+</body>
+</html>

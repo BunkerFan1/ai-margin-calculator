@@ -1,0 +1,486 @@
+<!-- 
+ENHANCED STORAGE OPTIONS FOR AI MARGIN CALCULATOR
+Add these features to your index.html
+-->
+
+<script>
+// ============================================
+// 1. AUTO-SAVE TO LOCAL STORAGE
+// ============================================
+
+// Auto-save all inputs as user types
+function enableAutoSave() {
+    // List all input fields to track
+    const inputFields = [
+        'gpt4o', 'gpt4mini', 'claude-sonnet', 'claude-haiku',
+        'tokens-per-user', 'power-user-mult', 'growth-rate',
+        'cache-ratio', 'cache-hit', 'avg-turns', 'tool-overhead',
+        'system-tokens', 'loop-frequency', 'pricing-model',
+        'basic-price', 'basic-tokens', 'pro-price', 'pro-tokens',
+        'enterprise-price', 'enterprise-tokens', 'overage-rate',
+        'rate-limit', 'max-tokens', 'free-tokens',
+        'max-iterations', 'tokens-iteration', 'recursion-prob', 'retry-mult'
+    ];
+
+    // Save current state to localStorage
+    function saveState() {
+        const state = {};
+        inputFields.forEach(field => {
+            const element = document.getElementById(field);
+            if (element) {
+                state[field] = element.value;
+            }
+        });
+        
+        localStorage.setItem('ai-calculator-autosave', JSON.stringify(state));
+        localStorage.setItem('ai-calculator-last-saved', new Date().toISOString());
+        
+        // Show save indicator
+        showSaveIndicator();
+    }
+
+    // Load saved state from localStorage
+    function loadState() {
+        const saved = localStorage.getItem('ai-calculator-autosave');
+        if (saved) {
+            const state = JSON.parse(saved);
+            inputFields.forEach(field => {
+                const element = document.getElementById(field);
+                if (element && state[field] !== undefined) {
+                    element.value = state[field];
+                }
+            });
+            
+            // Update displays
+            updateModelMix();
+            updateCacheValue();
+            calculateMargins();
+            simulateLoops();
+            
+            // Show last saved time
+            const lastSaved = localStorage.getItem('ai-calculator-last-saved');
+            if (lastSaved) {
+                console.log('Restored from auto-save:', new Date(lastSaved).toLocaleString());
+            }
+        }
+    }
+
+    // Add listeners to all inputs
+    inputFields.forEach(field => {
+        const element = document.getElementById(field);
+        if (element) {
+            element.addEventListener('input', debounce(saveState, 500));
+            element.addEventListener('change', saveState);
+        }
+    });
+
+    // Load on page load
+    loadState();
+}
+
+// Debounce helper
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Visual save indicator
+function showSaveIndicator() {
+    const indicator = document.getElementById('save-indicator');
+    if (indicator) {
+        indicator.style.display = 'block';
+        setTimeout(() => {
+            indicator.style.display = 'none';
+        }, 2000);
+    }
+}
+
+// ============================================
+// 2. EXPORT/IMPORT JSON CONFIGURATION
+// ============================================
+
+function exportConfiguration() {
+    const config = {
+        version: "1.0",
+        timestamp: new Date().toISOString(),
+        url: window.location.href,
+        models: {
+            gpt4o: document.getElementById('gpt4o').value,
+            gpt4mini: document.getElementById('gpt4mini').value,
+            claudeSonnet: document.getElementById('claude-sonnet').value,
+            claudeHaiku: document.getElementById('claude-haiku').value
+        },
+        usage: {
+            tokensPerUser: document.getElementById('tokens-per-user').value,
+            powerUserMult: document.getElementById('power-user-mult').value,
+            growthRate: document.getElementById('growth-rate').value,
+            cacheRatio: document.getElementById('cache-ratio').value,
+            cacheHit: document.getElementById('cache-hit').value,
+            avgTurns: document.getElementById('avg-turns').value,
+            toolOverhead: document.getElementById('tool-overhead').value,
+            systemTokens: document.getElementById('system-tokens').value,
+            loopFrequency: document.getElementById('loop-frequency').value
+        },
+        pricing: {
+            model: document.getElementById('pricing-model').value,
+            basicPrice: document.getElementById('basic-price').value,
+            basicTokens: document.getElementById('basic-tokens').value,
+            proPrice: document.getElementById('pro-price').value,
+            proTokens: document.getElementById('pro-tokens').value,
+            enterprisePrice: document.getElementById('enterprise-price').value,
+            enterpriseTokens: document.getElementById('enterprise-tokens').value,
+            overageRate: document.getElementById('overage-rate').value,
+            rateLimit: document.getElementById('rate-limit').value,
+            maxTokens: document.getElementById('max-tokens').value,
+            freeTokens: document.getElementById('free-tokens').value
+        },
+        loops: {
+            maxIterations: document.getElementById('max-iterations').value,
+            tokensIteration: document.getElementById('tokens-iteration').value,
+            recursionProb: document.getElementById('recursion-prob').value,
+            retryMult: document.getElementById('retry-mult').value
+        },
+        // Include calculated results
+        results: {
+            avgCost: document.getElementById('avg-cost').textContent,
+            avgRevenue: document.getElementById('avg-revenue').textContent,
+            grossMargin: document.getElementById('gross-margin').textContent,
+            powerMargin: document.getElementById('power-margin').textContent,
+            breakeven: document.getElementById('breakeven').textContent
+        }
+    };
+
+    // Download as JSON file
+    const dataStr = JSON.stringify(config, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const exportName = `ai-margin-calc-${new Date().toISOString().slice(0,10)}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportName);
+    linkElement.click();
+}
+
+function importConfiguration(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const config = JSON.parse(e.target.result);
+            
+            // Validate version
+            if (!config.version) {
+                throw new Error('Invalid configuration file');
+            }
+            
+            // Load model settings
+            if (config.models) {
+                document.getElementById('gpt4o').value = config.models.gpt4o || 20;
+                document.getElementById('gpt4mini').value = config.models.gpt4mini || 40;
+                document.getElementById('claude-sonnet').value = config.models.claudeSonnet || 30;
+                document.getElementById('claude-haiku').value = config.models.claudeHaiku || 10;
+            }
+            
+            // Load usage settings
+            if (config.usage) {
+                document.getElementById('tokens-per-user').value = config.usage.tokensPerUser || 500000;
+                document.getElementById('power-user-mult').value = config.usage.powerUserMult || 10;
+                document.getElementById('growth-rate').value = config.usage.growthRate || 15;
+                document.getElementById('cache-ratio').value = config.usage.cacheRatio || 30;
+                document.getElementById('cache-hit').value = config.usage.cacheHit || 70;
+                document.getElementById('avg-turns').value = config.usage.avgTurns || 3;
+                document.getElementById('tool-overhead').value = config.usage.toolOverhead || 20;
+                document.getElementById('system-tokens').value = config.usage.systemTokens || 1500;
+                document.getElementById('loop-frequency').value = config.usage.loopFrequency || 5;
+            }
+            
+            // Load pricing settings
+            if (config.pricing) {
+                document.getElementById('pricing-model').value = config.pricing.model || 'seat';
+                document.getElementById('basic-price').value = config.pricing.basicPrice || 29;
+                document.getElementById('basic-tokens').value = config.pricing.basicTokens || 100;
+                document.getElementById('pro-price').value = config.pricing.proPrice || 99;
+                document.getElementById('pro-tokens').value = config.pricing.proTokens || 500;
+                document.getElementById('enterprise-price').value = config.pricing.enterprisePrice || 499;
+                document.getElementById('enterprise-tokens').value = config.pricing.enterpriseTokens || 'Unlimited';
+                document.getElementById('overage-rate').value = config.pricing.overageRate || 0.03;
+                document.getElementById('rate-limit').value = config.pricing.rateLimit || 60;
+                document.getElementById('max-tokens').value = config.pricing.maxTokens || 4000;
+                document.getElementById('free-tokens').value = config.pricing.freeTokens || 10;
+            }
+            
+            // Load loop settings
+            if (config.loops) {
+                document.getElementById('max-iterations').value = config.loops.maxIterations || 10;
+                document.getElementById('tokens-iteration').value = config.loops.tokensIteration || 2000;
+                document.getElementById('recursion-prob').value = config.loops.recursionProb || 15;
+                document.getElementById('retry-mult').value = config.loops.retryMult || 3;
+            }
+            
+            // Update all displays
+            updateModelMix();
+            updateCacheValue();
+            calculateMargins();
+            simulateLoops();
+            
+            alert(`Configuration loaded successfully!\nFrom: ${new Date(config.timestamp).toLocaleString()}`);
+            
+        } catch (error) {
+            alert('Error loading configuration: ' + error.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+// ============================================
+// 3. URL SHARING WITH PARAMETERS
+// ============================================
+
+function generateShareableURL() {
+    const params = new URLSearchParams();
+    
+    // Add key parameters to URL
+    params.set('gpt4o', document.getElementById('gpt4o').value);
+    params.set('gpt4mini', document.getElementById('gpt4mini').value);
+    params.set('claude-sonnet', document.getElementById('claude-sonnet').value);
+    params.set('claude-haiku', document.getElementById('claude-haiku').value);
+    params.set('tokens', document.getElementById('tokens-per-user').value);
+    params.set('cache', document.getElementById('cache-ratio').value);
+    params.set('price', document.getElementById('pro-price').value);
+    
+    const shareURL = window.location.origin + window.location.pathname + '?' + params.toString();
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(shareURL).then(() => {
+        alert('Share URL copied to clipboard!');
+    });
+    
+    return shareURL;
+}
+
+function loadFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    
+    if (params.has('gpt4o')) {
+        document.getElementById('gpt4o').value = params.get('gpt4o');
+    }
+    if (params.has('gpt4mini')) {
+        document.getElementById('gpt4mini').value = params.get('gpt4mini');
+    }
+    if (params.has('claude-sonnet')) {
+        document.getElementById('claude-sonnet').value = params.get('claude-sonnet');
+    }
+    if (params.has('claude-haiku')) {
+        document.getElementById('claude-haiku').value = params.get('claude-haiku');
+    }
+    if (params.has('tokens')) {
+        document.getElementById('tokens-per-user').value = params.get('tokens');
+    }
+    if (params.has('cache')) {
+        document.getElementById('cache-ratio').value = params.get('cache');
+    }
+    if (params.has('price')) {
+        document.getElementById('pro-price').value = params.get('price');
+    }
+    
+    if (params.toString()) {
+        updateModelMix();
+        updateCacheValue();
+        calculateMargins();
+    }
+}
+
+// ============================================
+// 4. CLOUD STORAGE OPTIONS (REQUIRES BACKEND)
+// ============================================
+
+// Option A: Firebase (Free tier available)
+function saveToFirebase(userId) {
+    // Requires Firebase setup
+    const config = gatherConfiguration();
+    firebase.firestore().collection('calculations').doc(userId).set({
+        ...config,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+}
+
+// Option B: Supabase (Free tier available)
+async function saveToSupabase(userId) {
+    // Requires Supabase setup
+    const { data, error } = await supabase
+        .from('calculations')
+        .upsert({
+            user_id: userId,
+            config: gatherConfiguration(),
+            updated_at: new Date()
+        });
+}
+
+// Option C: Simple webhook to your server
+async function saveToWebhook(webhookUrl) {
+    const config = gatherConfiguration();
+    
+    try {
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(config)
+        });
+        
+        if (response.ok) {
+            alert('Configuration saved to server');
+        }
+    } catch (error) {
+        console.error('Save failed:', error);
+    }
+}
+
+// ============================================
+// 5. ADD UI ELEMENTS
+// ============================================
+</script>
+
+<!-- Add these UI elements to your HTML -->
+
+<!-- Auto-save indicator -->
+<div id="save-indicator" style="
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--carbon-green-60);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    display: none;
+    z-index: 1000;
+    font-size: 0.875rem;
+">
+    ✓ Auto-saved
+</div>
+
+<!-- Storage controls section (add to your main content) -->
+<div class="tile" style="margin-top: var(--spacing-06);">
+    <h3>Data Storage Options</h3>
+    
+    <div class="grid grid-2" style="gap: var(--spacing-05);">
+        <!-- Local Storage -->
+        <div>
+            <h4 style="font-size: 0.875rem; margin-bottom: var(--spacing-03);">Browser Storage</h4>
+            <button class="btn btn-secondary" onclick="enableAutoSave()" style="width: 100%; margin-bottom: var(--spacing-03);">
+                Enable Auto-Save
+            </button>
+            <button class="btn btn-secondary" onclick="localStorage.clear(); location.reload();" style="width: 100%;">
+                Clear Saved Data
+            </button>
+        </div>
+        
+        <!-- Export/Import -->
+        <div>
+            <h4 style="font-size: 0.875rem; margin-bottom: var(--spacing-03);">Export/Import</h4>
+            <button class="btn" onclick="exportConfiguration()" style="width: 100%; margin-bottom: var(--spacing-03);">
+                Export to JSON
+            </button>
+            <label class="btn btn-secondary" style="width: 100%; margin: 0; text-align: center;">
+                Import JSON
+                <input type="file" accept=".json" onchange="importConfiguration(this.files[0])" style="display: none;">
+            </label>
+        </div>
+        
+        <!-- Share URL -->
+        <div>
+            <h4 style="font-size: 0.875rem; margin-bottom: var(--spacing-03);">Share Configuration</h4>
+            <button class="btn btn-secondary" onclick="generateShareableURL()" style="width: 100%;">
+                Copy Share Link
+            </button>
+        </div>
+        
+        <!-- CSV Export -->
+        <div>
+            <h4 style="font-size: 0.875rem; margin-bottom: var(--spacing-03);">Spreadsheet Export</h4>
+            <button class="btn btn-secondary" onclick="exportToCSV()" style="width: 100%;">
+                Export to CSV
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================
+// 6. CSV EXPORT FOR SPREADSHEETS
+// ============================================
+
+function exportToCSV() {
+    const data = [
+        ['AI Margin Calculator Export'],
+        ['Generated', new Date().toISOString()],
+        [''],
+        ['Model Mix'],
+        ['Model', 'Percentage', 'Input $/M', 'Output $/M'],
+        ['GPT-4o', document.getElementById('gpt4o').value + '%', '2.50', '10.00'],
+        ['GPT-4o-mini', document.getElementById('gpt4mini').value + '%', '0.15', '0.60'],
+        ['Claude 3.5 Sonnet', document.getElementById('claude-sonnet').value + '%', '3.00', '15.00'],
+        ['Claude 3.5 Haiku', document.getElementById('claude-haiku').value + '%', '0.25', '1.25'],
+        [''],
+        ['Usage Patterns'],
+        ['Metric', 'Value'],
+        ['Tokens per user/month', document.getElementById('tokens-per-user').value],
+        ['Power user multiplier', document.getElementById('power-user-mult').value],
+        ['Cache ratio', document.getElementById('cache-ratio').value + '%'],
+        ['Cache hit rate', document.getElementById('cache-hit').value + '%'],
+        [''],
+        ['Pricing'],
+        ['Tier', 'Price', 'Token Limit'],
+        ['Basic', '$' + document.getElementById('basic-price').value, document.getElementById('basic-tokens').value + 'k'],
+        ['Pro', '$' + document.getElementById('pro-price').value, document.getElementById('pro-tokens').value + 'k'],
+        ['Enterprise', '$' + document.getElementById('enterprise-price').value, document.getElementById('enterprise-tokens').value],
+        [''],
+        ['Results'],
+        ['Metric', 'Value'],
+        ['Average cost/user', document.getElementById('avg-cost').textContent],
+        ['Average revenue', document.getElementById('avg-revenue').textContent],
+        ['Gross margin', document.getElementById('gross-margin').textContent],
+        ['Power user margin', document.getElementById('power-margin').textContent],
+        ['Break-even', document.getElementById('breakeven').textContent]
+    ];
+    
+    // Convert to CSV
+    const csv = data.map(row => row.map(cell => 
+        typeof cell === 'string' && cell.includes(',') ? `"${cell}"` : cell
+    ).join(',')).join('\n');
+    
+    // Download
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ai-margin-calc-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+}
+
+// ============================================
+// 7. INITIALIZE ON PAGE LOAD
+// ============================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Enable auto-save by default
+    enableAutoSave();
+    
+    // Load from URL if parameters exist
+    loadFromURL();
+    
+    // Show last saved time
+    const lastSaved = localStorage.getItem('ai-calculator-last-saved');
+    if (lastSaved) {
+        console.log('Last auto-saved:', new Date(lastSaved).toLocaleString());
+    }
+});
+</script>
