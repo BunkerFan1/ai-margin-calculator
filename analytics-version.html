@@ -1,0 +1,233 @@
+<!-- 
+ANALYTICS & FEEDBACK SNIPPETS
+Add these to your ai-margin-calculator.html file
+-->
+
+<!-- 1. GOOGLE ANALYTICS (Add before closing </head> tag) -->
+<!-- 
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+  
+  // Track calculator events
+  function trackEvent(action, category, label, value) {
+    gtag('event', action, {
+      'event_category': category,
+      'event_label': label,
+      'value': value
+    });
+  }
+</script>
+-->
+
+<!-- 2. PLAUSIBLE ANALYTICS (Privacy-friendly alternative) -->
+<!-- 
+<script defer data-domain="yourdomain.com" src="https://plausible.io/js/script.js"></script>
+<script>
+  window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) }
+</script>
+-->
+
+<!-- 3. SIMPLE ANALYTICS (Another privacy-friendly option) -->
+<!-- 
+<script async defer src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
+<noscript><img src="https://queue.simpleanalyticscdn.com/noscript.gif" alt="" referrerpolicy="no-referrer-when-downgrade" /></noscript>
+-->
+
+<!-- 4. FEEDBACK WIDGET (Add before closing </body> tag) -->
+<div id="feedback-widget" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+    <button onclick="toggleFeedback()" style="
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transition: all 0.3s;
+    ">💬</button>
+    
+    <div id="feedback-form" style="
+        display: none;
+        position: absolute;
+        bottom: 70px;
+        right: 0;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        padding: 20px;
+        width: 300px;
+    ">
+        <h3 style="margin-bottom: 15px; color: #334155;">Share Feedback</h3>
+        <textarea id="feedback-text" placeholder="What do you think? Any features you'd like?" style="
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: inherit;
+            resize: vertical;
+        "></textarea>
+        <input type="email" id="feedback-email" placeholder="Email (optional)" style="
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+        ">
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button onclick="submitFeedback()" style="
+                flex: 1;
+                padding: 10px;
+                background: #667eea;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+            ">Send</button>
+            <button onclick="toggleFeedback()" style="
+                flex: 1;
+                padding: 10px;
+                background: #e2e8f0;
+                color: #64748b;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+            ">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Feedback Widget Functions
+function toggleFeedback() {
+    const form = document.getElementById('feedback-form');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+function submitFeedback() {
+    const feedback = document.getElementById('feedback-text').value;
+    const email = document.getElementById('feedback-email').value;
+    
+    if (!feedback) {
+        alert('Please enter your feedback');
+        return;
+    }
+    
+    // Option 1: Send to your backend
+    // fetch('https://your-api.com/feedback', {
+    //     method: 'POST',
+    //     headers: { 'Content-Type': 'application/json' },
+    //     body: JSON.stringify({ feedback, email, timestamp: new Date() })
+    // });
+    
+    // Option 2: Use a service like Formspree
+    // fetch('https://formspree.io/f/YOUR_FORM_ID', {
+    //     method: 'POST',
+    //     headers: { 'Content-Type': 'application/json' },
+    //     body: JSON.stringify({ feedback, email })
+    // });
+    
+    // Option 3: Send via email link (basic)
+    const subject = 'AI Margin Calculator Feedback';
+    const body = `Feedback: ${feedback}\n\nFrom: ${email || 'Anonymous'}`;
+    window.location.href = `mailto:feedback@yourdomain.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    
+    // Clear form and close
+    document.getElementById('feedback-text').value = '';
+    document.getElementById('feedback-email').value = '';
+    toggleFeedback();
+    
+    // Show thank you message
+    alert('Thank you for your feedback! 🙏');
+    
+    // Track event if analytics enabled
+    if (typeof trackEvent !== 'undefined') {
+        trackEvent('feedback_submitted', 'engagement', 'feedback_widget');
+    }
+}
+
+// Enhanced Event Tracking
+document.addEventListener('DOMContentLoaded', function() {
+    // Track tab switches
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            if (typeof trackEvent !== 'undefined') {
+                trackEvent('tab_switch', 'navigation', this.textContent);
+            }
+        });
+    });
+    
+    // Track calculations
+    const originalCalculateMargins = window.calculateMargins;
+    window.calculateMargins = function() {
+        originalCalculateMargins();
+        if (typeof trackEvent !== 'undefined') {
+            trackEvent('calculation_performed', 'calculator', 'margin_calculation');
+        }
+    };
+    
+    // Track scenario saves
+    const originalSaveScenario = window.saveScenario;
+    window.saveScenario = function() {
+        originalSaveScenario();
+        if (typeof trackEvent !== 'undefined') {
+            trackEvent('scenario_saved', 'features', 'save_scenario');
+        }
+    };
+    
+    // Track exports
+    const originalExportResults = window.exportResults;
+    window.exportResults = function() {
+        originalExportResults();
+        if (typeof trackEvent !== 'undefined') {
+            trackEvent('report_exported', 'features', 'export_report');
+        }
+    };
+    
+    // Track time on page
+    let startTime = Date.now();
+    window.addEventListener('beforeunload', function() {
+        const timeSpent = Math.round((Date.now() - startTime) / 1000);
+        if (typeof trackEvent !== 'undefined') {
+            trackEvent('session_duration', 'engagement', 'time_on_page', timeSpent);
+        }
+    });
+});
+
+// Product Hunt Badge (Add where you want it to appear)
+// <a href="https://www.producthunt.com/posts/ai-margin-calculator?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-ai&#0045;margin&#0045;calculator" target="_blank">
+//     <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=YOUR_POST_ID&theme=light" 
+//          alt="AI Margin Calculator - Know your true AI unit economics | Product Hunt" 
+//          style="width: 250px; height: 54px;" width="250" height="54" />
+// </a>
+</script>
+
+<!-- 5. HOTJAR HEATMAPS & RECORDINGS (Optional) -->
+<!-- 
+<script>
+    (function(h,o,t,j,a,r){
+        h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
+        h._hjSettings={hjid:YOUR_SITE_ID,hjsv:6};
+        a=o.getElementsByTagName('head')[0];
+        r=o.createElement('script');r.async=1;
+        r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
+        a.appendChild(r);
+    })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
+</script>
+-->
+
+<!-- 6. CRISP CHAT WIDGET (Optional for real-time support) -->
+<!-- 
+<script type="text/javascript">
+    window.$crisp=[];window.CRISP_WEBSITE_ID="YOUR_WEBSITE_ID";
+    (function(){d=document;s=d.createElement("script");
+    s.src="https://client.crisp.chat/l.js";s.async=1;
+    d.getElementsByTagName("head")[0].appendChild(s);})();
+</script>
+-->

@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Product Margin Calculator - Understand Your AI Unit Economics</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Free AI margin calculator to analyze unit economics, model costs, and pricing strategies. Identify when seat-based pricing becomes unprofitable due to agent loops.">
+    <meta name="keywords" content="AI pricing, margin calculator, unit economics, GPT-4 costs, Claude pricing, SaaS metrics, AI product management">
+    <meta name="author" content="AI Margin Calculator">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ai-margin-calculator.com/">
+    <meta property="og:title" content="AI Product Margin Calculator - Know Your True Unit Economics">
+    <meta property="og:description" content="Calculate gross margins for AI products. Analyze model costs, usage patterns, and identify when autonomous agents create losses.">
+    <meta property="og:image" content="https://ai-margin-calculator.com/preview.png">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://ai-margin-calculator.com/">
+    <meta property="twitter:title" content="AI Product Margin Calculator">
+    <meta property="twitter:description" content="Free tool to calculate AI product margins and identify unprofitable customer segments.">
+    <meta property="twitter:image" content="https://ai-margin-calculator.com/preview.png">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://ai-margin-calculator.com/">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: #f7f9fc;
+            padding: 0;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            color: #64748b;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .nav-tab.active {
+            color: #667eea;
+            background: white;
+        }
+
+        .nav-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #667eea;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #475569;
+            font-weight: 500;
+        }
+
+        .input-group input[type="number"],
+        .input-group input[type="text"],
+        .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .slider-container {
+            margin: 20px 0;
+        }
+
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e2e8f0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        .slider-value {
+            display: inline-block;
+            margin-left: 10px;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .grid {
+            display: grid;
+            gap: 30px;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .card {
+            background: #f7f9fc;
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .card h3 {
+            color: #334155;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .metric:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            color: #64748b;
+        }
+
+        .metric-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #334155;
+        }
+
+        .metric-value.positive {
+            color: #10b981;
+        }
+
+        .metric-value.negative {
+            color: #ef4444;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #64748b;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            border: 1px solid #fbbf24;
+            color: #92400e;
+        }
+
+        .alert-danger {
+            background: #fee2e2;
+            border: 1px solid #f87171;
+            color: #991b1b;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 30px 0;
+        }
+
+        .model-mix-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .model-mix-item label {
+            flex: 1;
+            margin-right: 20px;
+        }
+
+        .model-mix-item input[type="range"] {
+            flex: 2;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            margin-left: 5px;
+            color: #94a3b8;
+            cursor: help;
+        }
+
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #334155;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            white-space: nowrap;
+            font-size: 0.9em;
+            z-index: 1000;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .nav-tabs {
+                flex-direction: column;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AI Product Margin Calculator</h1>
+            <p>Calculate your true unit economics with AI model costs, usage patterns, and pricing strategies</p>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('models')">Model Mix</button>
+            <button class="nav-tab" onclick="switchTab('usage')">Usage Patterns</button>
+            <button class="nav-tab" onclick="switchTab('pricing')">Pricing Model</button>
+            <button class="nav-tab" onclick="switchTab('analysis')">Margin Analysis</button>
+            <button class="nav-tab" onclick="switchTab('loops')">Loop Detection</button>
+        </div>
+
+        <div class="content">
+            <!-- Model Mix Tab -->
+            <div id="models-tab" class="tab-content active">
+                <h2>Configure Your Model Mix</h2>
+                <p style="color: #64748b; margin-bottom: 30px;">Set your AI model distribution and costs</p>
+
+                <div class="grid grid-2">
+                    <div class="card">
+                        <h3>Model Provider Mix</h3>
+                        
+                        <div class="model-mix-item">
+                            <label>GPT-4o (Premium)</label>
+                            <input type="range" class="slider" id="gpt4o" min="0" max="100" value="20" onchange="updateModelMix()">
+                            <span class="slider-value" id="gpt4o-value">20%</span>
+                        </div>
+
+                        <div class="model-mix-item">
+                            <label>GPT-4o-mini (Efficient)</label>
+                            <input type="range" class="slider" id="gpt4mini" min="0" max="100" value="40" onchange="updateModelMix()">
+                            <span class="slider-value" id="gpt4mini-value">40%</span>
+                        </div>
+
+                        <div class="model-mix-item">
+                            <label>Claude 3.5 Sonnet</label>
+                            <input type="range" class="slider" id="claude-sonnet" min="0" max="100" value="30" onchange="updateModelMix()">
+                            <span class="slider-value" id="claude-sonnet-value">30%</span>
+                        </div>
+
+                        <div class="model-mix-item">
+                            <label>Claude 3.5 Haiku</label>
+                            <input type="range" class="slider" id="claude-haiku" min="0" max="100" value="10" onchange="updateModelMix()">
+                            <span class="slider-value" id="claude-haiku-value">10%</span>
+                        </div>
+
+                        <div class="alert alert-warning" id="mix-warning" style="display: none;">
+                            Model mix doesn't add up to 100%. Please adjust.
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Blended Cost per Million Tokens</h3>
+                        
+                        <div class="metric">
+                            <span class="metric-label">Input Tokens</span>
+                            <span class="metric-value" id="blended-input">$2.50</span>
+                        </div>
+
+                        <div class="metric">
+                            <span class="metric-label">Output Tokens</span>
+                            <span class="metric-value" id="blended-output">$10.00</span>
+                        </div>
+
+                        <div class="metric">
+                            <span class="metric-label">Avg Input/Output Ratio</span>
+                            <span class="metric-value">3:1</span>
+                        </div>
+
+                        <div class="metric">
+                            <span class="metric-label">Effective Cost/M Tokens</span>
+                            <span class="metric-value positive" id="effective-cost">$4.38</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 30px;">
+                    <h3>Model Pricing Reference</h3>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #e2e8f0;">
+                                <th style="padding: 10px; text-align: left;">Model</th>
+                                <th style="padding: 10px; text-align: right;">Input ($/M)</th>
+                                <th style="padding: 10px; text-align: right;">Output ($/M)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid #e2e8f0;">
+                                <td style="padding: 10px;">GPT-4o</td>
+                                <td style="padding: 10px; text-align: right;">$2.50</td>
+                                <td style="padding: 10px; text-align: right;">$10.00</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;">
+                                <td style="padding: 10px;">GPT-4o-mini</td>
+                                <td style="padding: 10px; text-align: right;">$0.15</td>
+                                <td style="padding: 10px; text-align: right;">$0.60</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;">
+                                <td style="padding: 10px;">Claude 3.5 Sonnet</td>
+                                <td style="padding: 10px; text-align: right;">$3.00</td>
+                                <td style="padding: 10px; text-align: right;">$15.00</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px;">Claude 3.5 Haiku</td>
+                                <td style="padding: 10px; text-align: right;">$0.25</td>
+                                <td style="padding: 10px; text-align: right;">$1.25</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Usage Patterns Tab -->
+            <div id="usage-tab" class="tab-content">
+                <h2>Define Usage Patterns</h2>
+                <p style="color: #64748b; margin-bottom: 30px;">Configure token usage, caching, and agent behavior</p>
+
+                <div class="grid grid-2">
+                    <div class="card">
+                        <h3>Token Volume</h3>
+                        
+                        <div class="input-group">
+                            <label>Average tokens per user per month
+                                <span class="tooltip" data-tooltip="Total input + output tokens">ⓘ</span>
+                            </label>
+                            <input type="number" id="tokens-per-user" value="500000" onchange="calculateMargins()">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Power user multiplier
+                                <span class="tooltip" data-tooltip="Top 10% users consume X times average">ⓘ</span>
+                            </label>
+                            <input type="number" id="power-user-mult" value="10" step="0.1" onchange="calculateMargins()">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Month-over-month growth %</label>
+                            <input type="number" id="growth-rate" value="15" step="1" onchange="calculateMargins()">
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Caching Configuration</h3>
+                        
+                        <div class="input-group">
+                            <label>Cached request ratio %
+                                <span class="tooltip" data-tooltip="Percentage of requests using cache">ⓘ</span>
+                            </label>
+                            <input type="range" class="slider" id="cache-ratio" min="0" max="100" value="30" onchange="updateCacheValue()">
+                            <span class="slider-value" id="cache-ratio-value">30%</span>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Cache hit rate %
+                                <span class="tooltip" data-tooltip="Success rate of cache lookups">ⓘ</span>
+                            </label>
+                            <input type="range" class="slider" id="cache-hit" min="0" max="100" value="70" onchange="updateCacheValue()">
+                            <span class="slider-value" id="cache-hit-value">70%</span>
+                        </div>
+
+                        <div class="metric">
+                            <span class="metric-label">Effective savings</span>
+                            <span class="metric-value positive" id="cache-savings">21%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 30px;">
+                    <h3>Agentic Behavior</h3>
+                    
+                    <div class="grid grid-2">
+                        <div class="input-group">
+                            <label>Average turns per conversation</label>
+                            <input type="number" id="avg-turns" value="3" step="0.5" onchange="calculateMargins()">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Tool use overhead %
+                                <span class="tooltip" data-tooltip="Extra tokens for function calls">ⓘ</span>
+                            </label>
+                            <input type="number" id="tool-overhead" value="20" step="5" onchange="calculateMargins()">
+                        </div>
+
+                        <div class="input-group">
+                            <label>System prompt tokens</label>
+                            <input type="number" id="system-tokens" value="1500" step="100" onchange="calculateMargins()">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Agent loop frequency (per 1000 requests)</label>
+                            <input type="number" id="loop-frequency" value="5" step="1" onchange="calculateMargins()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pricing Model Tab -->
+            <div id="pricing-tab" class="tab-content">
+                <h2>Configure Pricing Model</h2>
+                <p style="color: #64748b; margin-bottom: 30px;">Set your product pricing and tiers</p>
+
+                <div class="card">
+                    <h3>Pricing Strategy</h3>
+                    
+                    <div class="input-group">
+                        <label>Primary pricing model</label>
+                        <select id="pricing-model" onchange="updatePricingFields()">
+                            <option value="seat">Seat-based (per user/month)</option>
+                            <option value="usage">Usage-based (pay as you go)</option>
+                            <option value="hybrid">Hybrid (base + overage)</option>
+                            <option value="credit">Credit packages</option>
+                        </select>
+                    </div>
+
+                    <div id="seat-pricing" class="pricing-config">
+                        <div class="grid grid-2">
+                            <div class="input-group">
+                                <label>Basic tier ($/month)</label>
+                                <input type="number" id="basic-price" value="29" step="1" onchange="calculateMargins()">
+                            </div>
+
+                            <div class="input-group">
+                                <label>Basic token limit (thousands)</label>
+                                <input type="number" id="basic-tokens" value="100" step="10" onchange="calculateMargins()">
+                            </div>
+
+                            <div class="input-group">
+                                <label>Pro tier ($/month)</label>
+                                <input type="number" id="pro-price" value="99" step="1" onchange="calculateMargins()">
+                            </div>
+
+                            <div class="input-group">
+                                <label>Pro token limit (thousands)</label>
+                                <input type="number" id="pro-tokens" value="500" step="50" onchange="calculateMargins()">
+                            </div>
+
+                            <div class="input-group">
+                                <label>Enterprise tier ($/month)</label>
+                                <input type="number" id="enterprise-price" value="499" step="10" onchange="calculateMargins()">
+                            </div>
+
+                            <div class="input-group">
+                                <label>Enterprise token limit</label>
+                                <input type="text" id="enterprise-tokens" value="Unlimited" onchange="calculateMargins()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Markup on base costs %
+                            <span class="tooltip" data-tooltip="Your margin target above AI costs">ⓘ</span>
+                        </label>
+                        <input type="number" id="markup" value="300" step="10" onchange="calculateMargins()">
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 30px;">
+                    <h3>Overage & Limits</h3>
+                    
+                    <div class="grid grid-2">
+                        <div class="input-group">
+                            <label>Overage rate ($/1k tokens)</label>
+                            <input type="number" id="overage-rate" value="0.03" step="0.01" onchange="calculateMargins()">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Hard rate limit (req/min)</label>
+                            <input type="number" id="rate-limit" value="60" step="10" onchange="calculateMargins()">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Max tokens per request</label>
+                            <input type="number" id="max-tokens" value="4000" step="500" onchange="calculateMargins()">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Free tier tokens (thousands)</label>
+                            <input type="number" id="free-tokens" value="10" step="5" onchange="calculateMargins()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Margin Analysis Tab -->
+            <div id="analysis-tab" class="tab-content">
+                <h2>Margin Analysis Dashboard</h2>
+                <p style="color: #64748b; margin-bottom: 30px;">Real-time profitability metrics and insights</p>
+
+                <div class="grid grid-2">
+                    <div class="card">
+                        <h3>Per-Customer Metrics</h3>
+                        
+                        <div class="metric">
+                            <span class="metric-label">Average customer cost</span>
+                            <span class="metric-value" id="avg-cost">$8.75</span>
+                        </div>
+
+                        <div class="metric">
+                            <span class="metric-label">Average revenue</span>
+                            <span class="metric-value" id="avg-revenue">$99.00</span>
+                        </div>
+
+                        <div class="metric">
+                            <span class="metric-label">Gross margin</span>
+                            <span class="metric-value positive" id="gross-margin">91.2%</span>
+                        </div>
+
+                        <div class="metric">
+                            <span class="metric-label">Contribution margin</span>
+                            <span class="metric-value positive" id="contribution-margin">$90.25</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Cohort Analysis</h3>
+                        
+                        <div class="metric">
+                            <span class="metric-label">Profitable customers</span>
+                            <span class="metric-value positive" id="profitable-pct">85%</span>
+                        </div>
+
+                        <div class="metric">
+                            <span class="metric-label">Underwater customers</span>
+                            <span class="metric-value negative" id="underwater-pct">15%</span>
+                        </div>
+
+                        <div class="metric">
+                            <span class="metric-label">Power user margin</span>
+                            <span class="metric-value negative" id="power-margin">-23%</span>
+                        </div>
+
+                        <div class="metric">
+                            <span class="metric-label">Break-even usage</span>
+                            <span class="metric-value" id="breakeven">2.2M tokens</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-danger" id="margin-alert" style="display: none; margin-top: 20px;">
+                    ⚠️ Warning: 15% of customers are unprofitable at current pricing. Power users consuming 10x average tokens are losing $23 per month.
+                </div>
+
+                <div class="card" style="margin-top: 30px;">
+                    <h3>Margin Distribution</h3>
+                    <div class="chart-container">
+                        <canvas id="marginChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="grid grid-2" style="margin-top: 30px;">
+                    <div class="card">
+                        <h3>Scenario Impact</h3>
+                        
+                        <div class="metric">
+                            <span class="metric-label">If loops increase 2x</span>
+                            <span class="metric-value negative">-12% margin</span>
+                        </div>
+
+                        <div class="metric">
+                            <span class="metric-label">If cache improves 50%</span>
+                            <span class="metric-value positive">+8% margin</span>
+                        </div>
+
+                        <div class="metric">
+                            <span class="metric-label">Switch to cheaper models</span>
+                            <span class="metric-value positive">+18% margin</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Recommendations</h3>
+                        <ul style="line-height: 1.8; color: #475569;">
+                            <li>Implement rate limiting for top 10% users</li>
+                            <li>Increase cache hit rate to 85% (saves $1.2/user)</li>
+                            <li>Consider tiered pricing with hard token limits</li>
+                            <li>Monitor agent loops - currently 0.5% of requests</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loop Detection Tab -->
+            <div id="loops-tab" class="tab-content">
+                <h2>Agent Loop Detection Simulator</h2>
+                <p style="color: #64748b; margin-bottom: 30px;">Identify when autonomous agents create runaway costs</p>
+
+                <div class="grid grid-2">
+                    <div class="card">
+                        <h3>Loop Configuration</h3>
+                        
+                        <div class="input-group">
+                            <label>Max iterations before detection</label>
+                            <input type="number" id="max-iterations" value="10" onchange="simulateLoops()">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Tokens per iteration</label>
+                            <input type="number" id="tokens-iteration" value="2000" step="500" onchange="simulateLoops()">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Recursion probability %</label>
+                            <input type="range" class="slider" id="recursion-prob" min="0" max="100" value="15" onchange="simulateLoops()">
+                            <span class="slider-value" id="recursion-value">15%</span>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Error retry multiplier</label>
+                            <input type="number" id="retry-mult" value="3" step="0.5" onchange="simulateLoops()">
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Loop Impact Analysis</h3>
+                        
+                        <div class="metric">
+                            <span class="metric-label">Worst-case tokens</span>
+                            <span class="metric-value negative" id="worst-tokens">60,000</span>
+                        </div>
+
+                        <div class="metric">
+                            <span class="metric-label">Worst-case cost</span>
+                            <span class="metric-value negative" id="worst-cost">$0.26</span>
+                        </div>
+
+                        <div class="metric">
+                            <span class="metric-label">Monthly risk exposure</span>
+                            <span class="metric-value negative" id="risk-exposure">$130</span>
+                        </div>
+
+                        <div class="metric">
+                            <span class="metric-label">Affected customers</span>
+                            <span class="metric-value" id="affected-users">~50/month</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning" id="loop-warning" style="margin-top: 20px;">
+                    ⚠️ Agent loops detected: At current settings, 5% of power users will trigger loops, consuming up to 60k tokens per incident. This creates $130/month risk exposure.
+                </div>
+
+                <div class="card" style="margin-top: 30px;">
+                    <h3>Loop Prevention Strategy</h3>
+                    
+                    <div class="grid grid-2">
+                        <div>
+                            <h4 style="color: #334155; margin-bottom: 15px;">Detection Rules</h4>
+                            <ul style="line-height: 1.8; color: #475569;">
+                                <li>Token velocity: >10k tokens/minute triggers alert</li>
+                                <li>Iteration count: Hard stop at 10 iterations</li>
+                                <li>Cost threshold: Auto-pause at $0.50/request</li>
+                                <li>Pattern matching: Detect repetitive outputs</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h4 style="color: #334155; margin-bottom: 15px;">Mitigation Actions</h4>
+                            <ul style="line-height: 1.8; color: #475569;">
+                                <li>Implement exponential backoff</li>
+                                <li>Add circuit breaker at 5 retries</li>
+                                <li>Cache validation before recursion</li>
+                                <li>User notification at 80% token limit</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 30px;">
+                    <h3>Real-time Loop Monitor</h3>
+                    <div class="chart-container">
+                        <canvas id="loopChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e2e8f0; text-align: center;">
+                <button class="btn" onclick="saveScenario()">Save Scenario</button>
+                <button class="btn btn-secondary" onclick="loadScenario()">Load Scenario</button>
+                <button class="btn btn-secondary" onclick="exportResults()">Export Report</button>
+                <button class="btn btn-secondary" onclick="resetCalculator()">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Model pricing data (per million tokens)
+        const modelPricing = {
+            'gpt4o': { input: 2.50, output: 10.00 },
+            'gpt4mini': { input: 0.15, output: 0.60 },
+            'claude-sonnet': { input: 3.00, output: 15.00 },
+            'claude-haiku': { input: 0.25, output: 1.25 }
+        };
+
+        let marginChart = null;
+        let loopChart = null;
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active from all nav tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // Mark nav tab as active
+            event.target.classList.add('active');
+            
+            // Update charts if analysis tab
+            if (tabName === 'analysis') {
+                updateMarginChart();
+            } else if (tabName === 'loops') {
+                updateLoopChart();
+            }
+        }
+
+        function updateModelMix() {
+            const models = ['gpt4o', 'gpt4mini', 'claude-sonnet', 'claude-haiku'];
+            let total = 0;
+            
+            models.forEach(model => {
+                const value = parseInt(document.getElementById(model).value);
+                document.getElementById(model + '-value').textContent = value + '%';
+                total += value;
+            });
+            
+            // Show warning if not 100%
+            const warning = document.getElementById('mix-warning');
+            if (total !== 100) {
+                warning.style.display = 'block';
+                warning.textContent = `Model mix adds up to ${total}%. Please adjust to equal 100%.`;
+            } else {
+                warning.style.display = 'none';
+            }
+            
+            // Calculate blended costs
+            calculateBlendedCosts();
+            calculateMargins();
+        }
+
+        function calculateBlendedCosts() {
+            const models = {
+                'gpt4o': parseInt(document.getElementById('gpt4o').value) / 100,
+                'gpt4mini': parseInt(document.getElementById('gpt4mini').value) / 100,
+                'claude-sonnet': parseInt(document.getElementById('claude-sonnet').value) / 100,
+                'claude-haiku': parseInt(document.getElementById('claude-haiku').value) / 100
+            };
+            
+            let blendedInput = 0;
+            let blendedOutput = 0;
+            
+            for (const [model, weight] of Object.entries(models)) {
+                blendedInput += modelPricing[model].input * weight;
+                blendedOutput += modelPricing[model].output * weight;
+            }
+            
+            document.getElementById('blended-input').textContent = '$' + blendedInput.toFixed(2);
+            document.getElementById('blended-output').textContent = '$' + blendedOutput.toFixed(2);
+            
+            // Calculate effective cost (assuming 3:1 input:output ratio)
+            const effectiveCost = (blendedInput * 3 + blendedOutput) / 4;
+            document.getElementById('effective-cost').textContent = '$' + effectiveCost.toFixed(2);
+            
+            return { input: blendedInput, output: blendedOutput, effective: effectiveCost };
+        }
+
+        function updateCacheValue() {
+            const cacheRatio = parseInt(document.getElementById('cache-ratio').value);
+            const cacheHit = parseInt(document.getElementById('cache-hit').value);
+            
+            document.getElementById('cache-ratio-value').textContent = cacheRatio + '%';
+            document.getElementById('cache-hit-value').textContent = cacheHit + '%';
+            
+            const savings = (cacheRatio * cacheHit / 100).toFixed(0);
+            document.getElementById('cache-savings').textContent = savings + '%';
+            
+            calculateMargins();
+        }
+
+        function calculateMargins() {
+            const costs = calculateBlendedCosts();
+            const tokensPerUser = parseInt(document.getElementById('tokens-per-user').value);
+            const cacheRatio = parseInt(document.getElementById('cache-ratio').value) / 100;
+            const cacheHit = parseInt(document.getElementById('cache-hit').value) / 100;
+            const proPrice = parseFloat(document.getElementById('pro-price').value);
+            
+            // Calculate average cost per user
+            const effectiveTokens = tokensPerUser * (1 - cacheRatio * cacheHit);
+            const avgCost = (effectiveTokens / 1000000) * costs.effective;
+            
+            // Update metrics
+            document.getElementById('avg-cost').textContent = '$' + avgCost.toFixed(2);
+            document.getElementById('avg-revenue').textContent = '$' + proPrice.toFixed(2);
+            
+            const margin = ((proPrice - avgCost) / proPrice * 100);
+            document.getElementById('gross-margin').textContent = margin.toFixed(1) + '%';
+            document.getElementById('gross-margin').className = margin > 0 ? 'metric-value positive' : 'metric-value negative';
+            
+            document.getElementById('contribution-margin').textContent = '$' + (proPrice - avgCost).toFixed(2);
+            
+            // Calculate cohort metrics
+            const powerMult = parseFloat(document.getElementById('power-user-mult').value);
+            const powerCost = avgCost * powerMult;
+            const powerMargin = ((proPrice - powerCost) / proPrice * 100);
+            
+            document.getElementById('power-margin').textContent = powerMargin.toFixed(0) + '%';
+            document.getElementById('power-margin').className = powerMargin > 0 ? 'metric-value positive' : 'metric-value negative';
+            
+            // Calculate underwater percentage (simplified model)
+            const underwaterPct = powerMargin < 0 ? 10 : 0; // Top 10% are power users
+            document.getElementById('underwater-pct').textContent = underwaterPct + '%';
+            document.getElementById('profitable-pct').textContent = (100 - underwaterPct) + '%';
+            
+            // Break-even calculation
+            const breakeven = (proPrice / costs.effective) * 1000000;
+            document.getElementById('breakeven').textContent = (breakeven / 1000000).toFixed(1) + 'M tokens';
+            
+            // Show/hide alerts
+            const alert = document.getElementById('margin-alert');
+            if (underwaterPct > 0) {
+                alert.style.display = 'block';
+                alert.innerHTML = `⚠️ Warning: ${underwaterPct}% of customers are unprofitable at current pricing. Power users consuming ${powerMult}x average tokens are losing $${Math.abs(proPrice - powerCost).toFixed(0)} per month.`;
+            } else {
+                alert.style.display = 'none';
+            }
+        }
+
+        function simulateLoops() {
+            const maxIter = parseInt(document.getElementById('max-iterations').value);
+            const tokensIter = parseInt(document.getElementById('tokens-iteration').value);
+            const recursionProb = parseInt(document.getElementById('recursion-prob').value);
+            const retryMult = parseFloat(document.getElementById('retry-mult').value);
+            
+            document.getElementById('recursion-value').textContent = recursionProb + '%';
+            
+            // Calculate worst case
+            const worstTokens = maxIter * tokensIter * retryMult;
+            const costs = calculateBlendedCosts();
+            const worstCost = (worstTokens / 1000000) * costs.effective;
+            
+            document.getElementById('worst-tokens').textContent = worstTokens.toLocaleString();
+            document.getElementById('worst-cost').textContent = '$' + worstCost.toFixed(2);
+            
+            // Monthly exposure (assuming 500 incidents)
+            const monthlyRisk = worstCost * 500;
+            document.getElementById('risk-exposure').textContent = '$' + monthlyRisk.toFixed(0);
+            
+            updateLoopChart();
+        }
+
+        function updateMarginChart() {
+            const ctx = document.getElementById('marginChart');
+            if (!ctx) return;
+            
+            if (marginChart) {
+                marginChart.destroy();
+            }
+            
+            // Generate sample distribution data
+            const labels = ['<100k', '100-250k', '250-500k', '500k-1M', '1M-2M', '>2M'];
+            const margins = [95, 88, 75, 45, 10, -25];
+            const customers = [300, 450, 250, 150, 80, 20];
+            
+            marginChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Gross Margin %',
+                        data: margins,
+                        backgroundColor: margins.map(m => m > 0 ? 'rgba(102, 126, 234, 0.6)' : 'rgba(239, 68, 68, 0.6)'),
+                        borderColor: margins.map(m => m > 0 ? 'rgba(102, 126, 234, 1)' : 'rgba(239, 68, 68, 1)'),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Margin by Usage Segment (tokens/month)'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                afterLabel: function(context) {
+                                    return customers[context.dataIndex] + ' customers';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateLoopChart() {
+            const ctx = document.getElementById('loopChart');
+            if (!ctx) return;
+            
+            if (loopChart) {
+                loopChart.destroy();
+            }
+            
+            // Simulate loop detection over time
+            const labels = ['0s', '5s', '10s', '15s', '20s', '25s', '30s'];
+            const normal = [1000, 1200, 1100, 1300, 1250, 1150, 1200];
+            const looping = [1000, 2000, 4000, 8000, 16000, 32000, 0]; // Killed at 30s
+            
+            loopChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Normal Request',
+                        data: normal,
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Looping Agent (killed at 25s)',
+                        data: looping,
+                        borderColor: 'rgba(239, 68, 68, 1)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Token Consumption Pattern - Loop Detection'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Tokens'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updatePricingFields() {
+            // This would show/hide different pricing configurations
+            // For now, keeping seat-based visible
+        }
+
+        function saveScenario() {
+            const scenario = {
+                models: {
+                    gpt4o: document.getElementById('gpt4o').value,
+                    gpt4mini: document.getElementById('gpt4mini').value,
+                    claudeSonnet: document.getElementById('claude-sonnet').value,
+                    claudeHaiku: document.getElementById('claude-haiku').value
+                },
+                usage: {
+                    tokensPerUser: document.getElementById('tokens-per-user').value,
+                    powerUserMult: document.getElementById('power-user-mult').value,
+                    cacheRatio: document.getElementById('cache-ratio').value,
+                    cacheHit: document.getElementById('cache-hit').value
+                },
+                pricing: {
+                    proPrice: document.getElementById('pro-price').value
+                }
+            };
+            
+            localStorage.setItem('ai-margin-scenario', JSON.stringify(scenario));
+            alert('Scenario saved! You can reload it anytime.');
+        }
+
+        function loadScenario() {
+            const saved = localStorage.getItem('ai-margin-scenario');
+            if (!saved) {
+                alert('No saved scenario found.');
+                return;
+            }
+            
+            const scenario = JSON.parse(saved);
+            
+            // Load model mix
+            document.getElementById('gpt4o').value = scenario.models.gpt4o;
+            document.getElementById('gpt4mini').value = scenario.models.gpt4mini;
+            document.getElementById('claude-sonnet').value = scenario.models.claudeSonnet;
+            document.getElementById('claude-haiku').value = scenario.models.claudeHaiku;
+            
+            // Load usage
+            document.getElementById('tokens-per-user').value = scenario.usage.tokensPerUser;
+            document.getElementById('power-user-mult').value = scenario.usage.powerUserMult;
+            document.getElementById('cache-ratio').value = scenario.usage.cacheRatio;
+            document.getElementById('cache-hit').value = scenario.usage.cacheHit;
+            
+            // Load pricing
+            document.getElementById('pro-price').value = scenario.pricing.proPrice;
+            
+            // Update displays
+            updateModelMix();
+            updateCacheValue();
+            calculateMargins();
+            
+            alert('Scenario loaded successfully!');
+        }
+
+        function exportResults() {
+            // Create a summary of all calculations
+            const summary = `
+AI MARGIN CALCULATOR REPORT
+Generated: ${new Date().toLocaleString()}
+
+MODEL MIX
+---------
+GPT-4o: ${document.getElementById('gpt4o').value}%
+GPT-4o-mini: ${document.getElementById('gpt4mini').value}%
+Claude Sonnet: ${document.getElementById('claude-sonnet').value}%
+Claude Haiku: ${document.getElementById('claude-haiku').value}%
+
+BLENDED COSTS
+------------
+Input: ${document.getElementById('blended-input').textContent}/M tokens
+Output: ${document.getElementById('blended-output').textContent}/M tokens
+Effective: ${document.getElementById('effective-cost').textContent}/M tokens
+
+USAGE PATTERNS
+-------------
+Avg tokens/user/month: ${document.getElementById('tokens-per-user').value}
+Cache effectiveness: ${document.getElementById('cache-savings').textContent}
+Power user multiplier: ${document.getElementById('power-user-mult').value}x
+
+MARGIN ANALYSIS
+--------------
+Average cost/user: ${document.getElementById('avg-cost').textContent}
+Average revenue: ${document.getElementById('avg-revenue').textContent}
+Gross margin: ${document.getElementById('gross-margin').textContent}
+Power user margin: ${document.getElementById('power-margin').textContent}
+Underwater customers: ${document.getElementById('underwater-pct').textContent}
+
+RECOMMENDATIONS
+--------------
+1. Implement rate limiting for power users
+2. Improve cache hit rate to reduce costs
+3. Monitor agent loops closely
+4. Consider tiered pricing with hard limits
+            `;
+            
+            // Create download link
+            const blob = new Blob([summary], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ai-margin-report.txt';
+            a.click();
+        }
+
+        function resetCalculator() {
+            if (confirm('Reset all values to defaults?')) {
+                location.reload();
+            }
+        }
+
+        // Initialize on load
+        window.onload = function() {
+            updateModelMix();
+            updateCacheValue();
+            calculateMargins();
+            simulateLoops();
+        };
+    </script>
+</body>
+</html>
